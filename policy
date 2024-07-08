@@ -1,91 +1,125 @@
 {
-  "if": {
-    "allOf": [
-      {
-        "field": "type",
-        "equals": "Microsoft.HybridCompute/machines"
+  "properties": {
+    "displayName": "Deploy DCR1 to Azure Arc-enabled Servers",
+    "description": "Ensures that a specific data collection rule (DCR) is assigned to Azure Arc-enabled servers.",
+    "policyType": "Custom",
+    "mode": "All",
+    "metadata": {
+      "category": "Monitoring"
+    },
+    "parameters": {
+      "dcrName": {
+        "type": "String",
+        "metadata": {
+          "displayName": "DCR Name",
+          "description": "Name of the Data Collection Rule"
+        }
       },
-      {
-        "field": "Microsoft.HybridCompute/machines/osType",
-        "equals": "Windows"
+      "location": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Location",
+          "description": "Location of the Data Collection Rule"
+        }
+      },
+      "workspaceResourceId": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Log Analytics Workspace Resource ID",
+          "description": "Resource ID of the Log Analytics Workspace"
+        }
       }
-    ]
-  },
-  "then": {
-    "effect": "deployIfNotExists",
-    "details": {
-      "type": "Microsoft.Insights/dataCollectionRules",
-      "name": "DCR1",
-      "existenceCondition": {
+    },
+    "policyRule": {
+      "if": {
         "allOf": [
           {
-            "field": "name",
-            "equals": "DCR1"
+            "field": "type",
+            "equals": "Microsoft.HybridCompute/machines"
+          },
+          {
+            "field": "Microsoft.HybridCompute/machines/osType",
+            "equals": "Windows"
           }
         ]
       },
-      "roleDefinitionIds": [
-        "/providers/Microsoft.Authorization/roleDefinitions/7f7b47c2-19c3-41e4-830f-0f7e2e13d6d1"
-      ],
-      "deployment": {
-        "properties": {
-          "mode": "incremental",
-          "template": {
-            "$schema": "http://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-            "contentVersion": "1.0.0.0",
-            "resources": [
+      "then": {
+        "effect": "deployIfNotExists",
+        "details": {
+          "type": "Microsoft.Insights/dataCollectionRules",
+          "name": "[parameters('dcrName')]",
+          "existenceCondition": {
+            "allOf": [
               {
-                "type": "Microsoft.Insights/dataCollectionRules",
-                "apiVersion": "2021-04-01",
-                "name": "[parameters('dcrName')]",
-                "location": "[parameters('location')]",
-                "properties": {
-                  "dataSources": [
-                    {
-                      "type": "WindowsEventLog",
-                      "streams": [
-                        "Microsoft-Event"
-                      ],
-                      "properties": {
-                        "xPathQueries": {
-                          "Application": "*[System[(Level=2 or Level=3)]]"
+                "field": "name",
+                "equals": "[parameters('dcrName')]"
+              }
+            ]
+          },
+          "roleDefinitionIds": [
+            "/providers/Microsoft.Authorization/roleDefinitions/7f7b47c2-19c3-41e4-830f-0f7e2e13d6d1"
+          ],
+          "deployment": {
+            "properties": {
+              "mode": "incremental",
+              "template": {
+                "$schema": "http://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                "contentVersion": "1.0.0.0",
+                "resources": [
+                  {
+                    "type": "Microsoft.Insights/dataCollectionRules",
+                    "apiVersion": "2021-04-01",
+                    "name": "[parameters('dcrName')]",
+                    "location": "[parameters('location')]",
+                    "properties": {
+                      "dataSources": [
+                        {
+                          "type": "WindowsEventLog",
+                          "streams": [
+                            "Microsoft-Event"
+                          ],
+                          "properties": {
+                            "xPathQueries": {
+                              "Application": "*[System[(Level=2 or Level=3)]]"
+                            }
+                          }
                         }
+                      ],
+                      "destinations": {
+                        "logAnalytics": [
+                          {
+                            "workspaceResourceId": "[parameters('workspaceResourceId')]"
+                          }
+                        ]
                       }
                     }
-                  ],
-                  "destinations": {
-                    "logAnalytics": [
-                      {
-                        "workspaceResourceId": "[parameters('workspaceResourceId')]"
-                      }
-                    ]
+                  }
+                ],
+                "parameters": {
+                  "dcrName": {
+                    "type": "string"
+                  },
+                  "location": {
+                    "type": "string"
+                  },
+                  "workspaceResourceId": {
+                    "type": "string"
                   }
                 }
               }
-            ],
-            "parameters": {
-              "dcrName": {
-                "type": "string"
-              },
-              "location": {
-                "type": "string"
-              },
-              "workspaceResourceId": {
-                "type": "string"
-              }
+            }
+          },
+          "parameters": {
+            "dcrName": {
+              "value": "DCR1"
+            },
+            "location": {
+              "value": "eastus"
+            },
+            "workspaceResourceId": {
+              "value": "[resourceId('Microsoft.OperationalInsights/workspaces', 'Log1')]"
             }
           }
-        }
-      },
-      "parameters": {
-        "dcrName": {
-          "value": "DCR1"
-        },
-        "location": {
-          "value": "eastus"
-        },
-        "workspaceResourceId": {
-          "value": "[resourceId('Microsoft.OperationalInsights/workspaces', 'Log1')]"
         }
       }
     }
